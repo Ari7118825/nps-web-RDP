@@ -8,17 +8,20 @@
 <body>
   <h1>Connect to RDP Server</h1>
   <form id="connect-form">
-    <label for="ip">IP Address:</label>
-    <input type="text" id="ip" required>
+    <label for="signaling-ip">Signaling Server IP:</label>
+    <input type="text" id="signaling-ip" required>
     <br>
-    <label for="port">Port:</label>
-    <input type="number" id="port" value="3389" required>
+    <label for="rdp-ip">RDP Server IP:</label>
+    <input type="text" id="rdp-ip" required>
     <br>
-    <label for="username">Username:</label>
-    <input type="text" id="username" required>
+    <label for="rdp-port">RDP Port:</label>
+    <input type="number" id="rdp-port" value="3389" required>
     <br>
-    <label for="password">Password:</label>
-    <input type="password" id="password" required>
+    <label for="rdp-username">Username:</label>
+    <input type="text" id="rdp-username" required>
+    <br>
+    <label for="rdp-password">Password:</label>
+    <input type="password" id="rdp-password" required>
     <br>
     <button type="submit">Connect</button>
   </form>
@@ -27,16 +30,18 @@
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
-    const socket = io('http://<device3-ip>:3000'); // Replace with Device 3's IP
-
     const form = document.getElementById('connect-form');
     form.addEventListener('submit', (e) => {
       e.preventDefault();
 
-      const ip = document.getElementById('ip').value;
-      const port = document.getElementById('port').value;
-      const username = document.getElementById('username').value;
-      const password = document.getElementById('password').value;
+      const signalingIp = document.getElementById('signaling-ip').value;
+      const rdpIp = document.getElementById('rdp-ip').value;
+      const rdpPort = document.getElementById('rdp-port').value;
+      const rdpUsername = document.getElementById('rdp-username').value;
+      const rdpPassword = document.getElementById('rdp-password').value;
+
+      // Connect to the signaling server
+      const socket = io(`http://${signalingIp}:3000`);
 
       // Initiate WebRTC connection
       const peerConnection = new RTCPeerConnection();
@@ -44,7 +49,7 @@
       // Handle ICE candidates
       peerConnection.onicecandidate = (event) => {
         if (event.candidate) {
-          socket.emit('ice-candidate', { target: ip, candidate: event.candidate });
+          socket.emit('ice-candidate', { target: rdpIp, candidate: event.candidate });
         }
       };
 
@@ -58,7 +63,7 @@
       peerConnection.createOffer()
         .then((offer) => peerConnection.setLocalDescription(offer))
         .then(() => {
-          socket.emit('offer', { target: ip, offer: peerConnection.localDescription });
+          socket.emit('offer', { target: rdpIp, offer: peerConnection.localDescription });
         });
 
       // Listen for signaling messages
