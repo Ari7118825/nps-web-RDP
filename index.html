@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RDP over WebRTC</title>
+</head>
+<body>
+  <h1>Connect to RDP Server</h1>
+  <form id="connect-form">
+    <label for="ip">IP Address:</label>
+    <input type="text" id="ip" required>
+    <br>
+    <label for="port">Port:</label>
+    <input type="number" id="port" value="3389" required>
+    <br>
+    <label for="username">Username:</label>
+    <input type="text" id="username" required>
+    <br>
+    <label for="password">Password:</label>
+    <input type="password" id="password" required>
+    <br>
+    <button type="submit">Connect</button>
+  </form>
+
+  <div id="remote-desktop"></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io('http://<device3-ip>:3000'); // Replace with Device 3's IP
+
+    const form = document.getElementById('connect-form');
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      const ip = document.getElementById('ip').value;
+      const port = document.getElementById('port').value;
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+
+      // Initiate WebRTC connection
+      const peerConnection = new RTCPeerConnection();
+
+      // Handle ICE candidates
+      peerConnection.onicecandidate = (event) => {
+        if (event.candidate) {
+          socket.emit('ice-candidate', { target: ip, candidate: event.candidate });
+        }
+      };
+
+      // Handle incoming RDP stream
+      peerConnection.ontrack = (event) => {
+        const videoElement = document.getElementById('remote-desktop');
+        videoElement.srcObject = event.streams[0];
+      };
+
+      // Create an offer and send it to Device 1
+      peerConnection.createOffer()
+        .then((offer) => peerConnection.setLocalDescription(offer))
+        .then(() => {
+          socket.emit('offer', { target: ip, offer: peerConnection.localDescription });
+        });
+
+      // Listen for signaling messages
+      socket.on('answer', (answer) => {
+        peerConnection.setRemoteDescription(answer);
+      });
+
+      socket.on('ice-candidate', (candidate) => {
+        peerConnection.addIceCandidate(candidate);
+      });
+    });
+  </script>
+</body>
+</html>
