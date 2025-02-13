@@ -11,6 +11,9 @@
     <label for="signaling-ip">Signaling Server IP:</label>
     <input type="text" id="signaling-ip" required>
     <br>
+    <label for="signaling-port">Signaling Server Port:</label>
+    <input type="number" id="signaling-port" value="3000" required>
+    <br>
     <label for="rdp-ip">RDP Server IP:</label>
     <input type="text" id="rdp-ip" required>
     <br>
@@ -35,13 +38,14 @@
       e.preventDefault();
 
       const signalingIp = document.getElementById('signaling-ip').value;
+      const signalingPort = document.getElementById('signaling-port').value;
       const rdpIp = document.getElementById('rdp-ip').value;
       const rdpPort = document.getElementById('rdp-port').value;
       const rdpUsername = document.getElementById('rdp-username').value;
       const rdpPassword = document.getElementById('rdp-password').value;
 
       // Connect to the signaling server
-      const socket = io(`http://${signalingIp}:3000`);
+      const socket = io(`http://${signalingIp}:${signalingPort}`);
 
       // Initiate WebRTC connection
       const peerConnection = new RTCPeerConnection();
